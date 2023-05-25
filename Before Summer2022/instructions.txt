@@ -1,0 +1,14 @@
+python library used: thorlabs_apt
+
+https://github.com/qpit/thorlabs_apt
+
+copy APT.dll, APT.lib to thorlabs_apt library/package folder
+
+APT.dll and APT.lib were obtained from the PyAPT repository:
+
+https://github.com/mcleung/PyAPT
+
+that repository claims that it got things from
+
+https://www.thorlabs.us/software_pages/ViewSoftwarePage.cfm?Code=APT
+
