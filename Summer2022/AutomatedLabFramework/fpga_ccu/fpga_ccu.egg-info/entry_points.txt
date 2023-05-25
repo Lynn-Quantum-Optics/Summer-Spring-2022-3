@@ -1,0 +1,3 @@
+[console_scripts]
+fpga-ccu = fpga_ccu.__main__:main
+

@@ -1,0 +1,353 @@
+{
+  "Title": "HMC - Lynn's Quantum Optics Lab",
+  "Contributors": [
+    "Theresa Lynn",
+    "Ben Hartley",
+    "Eritas Yang",
+    "Becca Verghese"
+  ],
+  "Documentation": {
+    "Base Directory": "temp",
+    "Log Directory": "logs",
+    "Data Directory": "data"
+  },
+  "Equipment": {
+    "Motors": {
+      "Hub 1": {
+        "ID": 1,
+        "Enabled": true,
+        "Com Port": "COM5",
+        "Type": "Elliptec",
+        "Addresses": {
+          "A": {
+            "ID": 1,
+            "Type": "Laser Axis Rotation Motor",
+            "Serial Number": 111
+          },
+          "B": {
+            "ID": 2,
+            "Type": "Base Rotation Motor",
+            "Serial Number": 222
+          },
+          "C": {
+            "ID": 3,
+            "Type": "Laser Axis Rotation Motor",
+            "Serial Number": 333
+          }
+        }
+      },
+      "Hub 2": {
+        "ID": 2,
+        "Enabled": true,
+        "Com Port": "COM7",
+        "Type": "Elliptec",
+        "Addresses": {
+          "A": {
+            "ID": 4,
+            "Type": "Laser Axis Rotation Motor",
+            "Serial Number": 444
+          }
+        }
+      },
+      "Hub 3": {
+        "ID": 3,
+        "Enabled": true,
+        "Type": "Thor Labs",
+        "Motor": {
+          "ID": 5,
+          "Type": "Laser Axis Rotation Mount",
+          "Serial Number": 83811667
+        }
+      },
+      "Hub 4": {
+        "ID": 4,
+        "Enabled": true,
+        "Type": "Thor Labs",
+        "Motor": {
+          "ID": 6,
+          "Type": "Laser Axis Rotation Mount",
+          "Serial Number": 83811904
+        }
+      },
+      "Hub 5": {
+        "ID": 5,
+        "Enabled": true,
+        "Type": "Thor Labs",
+        "Motor": {
+          "ID": 7,
+          "Type": "Laser Axis Rotation Mount",
+          "Serial Number": 83811901
+        }
+      },
+      "Hub 6": {
+        "ID": 6,
+        "Enabled": true,
+        "Type": "Thor Labs",
+        "Motor": {
+          "ID": 8,
+          "Type": "Laser Axis Rotation Mount",
+          "Serial Number": 83811646
+        }
+      }
+    },
+    "Laser": {
+      "Title": "Main Laser",
+      "Type": "Standard",
+      "Polarization": "Horizontal",
+      "Serial Number": 999
+    },
+    "Pre-Pair Production Components": [
+      {
+        "Component ID": 1,
+        "Name": "C_UVHWP",
+        "Type": "Motorized Laser Axis Rotation Mount",
+        "Placement Orientation": {"theta": 0, "phi": 0},
+        "Serial Number": 333,
+        "Motor ID": 1,
+        "Optic": {
+          "Title": "UV Half Wave Plate",
+          "Type": "HWP",
+          "Serial Number": 123}
+      },
+      {
+        "Component ID": 2,
+        "Name": "C_QP",
+        "Type": "Motorized Base Rotation Mount",
+        "Placement Orientation": {"theta": 0, "phi": 0},
+        "Serial Number": 333,
+        "Motor ID": 2,
+        "Optic": {
+          "Title": "Quartz Plate",
+          "Type": "QP",
+          "Thickness(mm)": 1,
+          "Linear Phase Shift Density(rad/mm)": 32.6569,
+          "Serial Number": 123}
+      },
+      {
+        "Component ID": 3,
+        "Name": "C_PCC",
+        "Type": "Motorized Laser Axis Rotation Mount",
+        "Placement Orientation": {"theta": 0, "phi": 0},
+        "Serial Number": 333,
+        "Motor ID": 3,
+        "Optic": {
+          "Title": "Pre-Compensation Crystal",
+          "Type": "PCC",
+          "Wavelength Dependent Internal Phase Shift": 1,
+          "Serial Number": 123}
+      },
+      {
+        "Component ID": 4,
+        "Name": "C_BBO",
+        "Type": "Standard",
+        "Serial Number": 333,
+        "Optic": {
+          "Title": "BBO Crystal",
+          "Type": "BBO",
+          "Internal Phase Shift": 0.5,
+          "Wavelength Dependent Internal Phase Shift": -1,
+          "Serial Number": 123}
+      }
+    ],
+    "Post-Pair Production Components": {
+      "Alice": [],
+      "Bob": [
+        {
+          "Component ID": 5,
+          "Name": "B_C_HWP",
+          "Type": "Motorized Laser Axis Rotation Mount",
+          "Placement Orientation": {"theta": 0, "phi": 0},
+          "Serial Number": 333,
+          "Motor ID": 4,
+          "Optic": {
+            "Title": "Phi/Psi Half Wave Plate",
+            "Type": "HWP",
+            "Serial Number": 123}
+        }
+      ]
+    },
+    "Pair Measurement Components": {
+      "Alice": [
+        {
+          "Component ID": 6,
+          "Name": "A_M_HWP",
+          "Type": "Motorized Laser Axis Rotation Mount",
+          "Placement Orientation": {"theta": 0, "phi": 0},
+          "Serial Number": 83811667,
+          "Motor ID": 5,
+          "Optic": {
+            "Title": "Alice's Half Wave Plate",
+            "Type": "HWP",
+            "Serial Number": 456}
+        },
+        {
+          "Component ID": 7,
+          "Name": "A_M_QWP",
+          "Type": "Motorized Laser Axis Rotation Mount",
+          "Placement Orientation": {"theta": 0, "phi": 0},
+          "Serial Number": 83811904,
+          "Motor ID": 6,
+          "Optic": {
+            "Title": "Alice's Quarter Wave Plate",
+            "Type": "QWP",
+            "Serial Number": 456}
+        },
+        {
+          "Component ID": 8,
+          "Name": "A_M_PBS",
+          "Type": "Standard",
+          "Serial Number": 222,
+          "Optic": {
+            "Title": "Alice's Polarizing Beam Splitter",
+            "Type": "PBS",
+            "Serial Number": 456}
+        }
+      ],
+      "Bob": [
+        {
+          "Component ID": 9,
+          "Name": "B_M_HWP",
+          "Type": "Motorized Laser Axis Rotation Mount",
+          "Placement Orientation": {"theta": 0, "phi": 0},
+          "Serial Number": 83811901,
+          "Motor ID": 7,
+          "Optic": {
+            "Title": "Bob's Half Wave Plate",
+            "Type": "HWP",
+            "Serial Number": 456}
+        },
+        {
+          "Component ID": 10,
+          "Name": "B_M_QWP",
+          "Type": "Motorized Laser Axis Rotation Mount",
+          "Placement Orientation": {"theta": 0, "phi": 0},
+          "Motor ID": 8,
+          "Optic": {
+            "Title": "Bob's Quarter Wave Plate",
+            "Type": "QWP",
+            "Serial Number": 456}
+        },
+        {
+          "Component ID": 11,
+          "Name": "B_M_PBS",
+          "Type": "Standard",
+          "Serial Number": 222,
+          "Optic": {
+            "Title": "Bob's Polarizing Beam Splitter",
+            "Type": "PBS",
+            "Serial Number": 456}
+        }
+      ]
+    },
+    "Detectors": [
+      {"Title": "Single Photon Counter", "Serial Number": 555}
+    ]
+  },
+  "Experiments": {
+    "FULL_TOMOGRAPHY": [
+      "LA", "RA", "VA", "HA", "DA", "AA",
+      "AD", "DD", "HD", "VD", "RD", "LD",
+      "LH", "RH", "VH", "HH", "DH", "AH",
+      "AV", "DV", "HV", "VV", "RV", "LV",
+      "LL", "RL", "VL", "HL", "DL", "AL",
+      "AR", "DR", "HR", "VR", "RR", "LR"
+    ],
+    "PURITY": [
+      "DD", "AA", "AD", "DA"
+    ],
+    "STEERING_MEASUREMENT": [
+      "HH", "VV", "HV", "VH",
+      "DD", "DA", "AD", "AA",
+      "DS", "DZ", "AS", "AZ",
+      "SD", "ZD", "SA", "ZA",
+      "BA", "PA", "BD", "PD",
+      "DB", "DP", "AB", "AP"
+    ],
+    "HV_BASIS": [
+      "HH", "VV", "HV", "VH"
+    ],
+    "CIRCULAR": [
+      "RR", "LR", "LL", "RL"
+    ],
+    "BELL": [
+      "VP", "HB", "HP", "VB",
+      "VZ", "HS", "HZ", "VS",
+      "DP", "AB", "AP", "DB",
+      "AZ", "DS", "DZ", "AS"
+    ],
+    "DIAGONAL_SMILEYFACE": [
+      "DS", "DZ", "AS", "AZ"
+    ],
+    "ANTIDIAGONAL_SAILBOAT": [
+      "AB", "AP", "DB", "DP"
+    ]
+    },
+  "Settings": {
+    "Unusually_Low_Purity": 0.9,
+    "Num Samples in Calibration Check": 25,
+    "Alice_HWP_State_Reference": {
+      "H": -1.10,
+      "V": 43.9,
+      "D": 66.4,
+      "A": 21.4,
+      "R": -1.1,
+      "L": -1.1,
+      "P": 55.15,
+      "B": 10.15,
+      "Z": 32.65,
+      "S": -12.35,
+      "0": 0
+    },
+    "Bob_HWP_State_Reference": {
+      "H": -6.12,
+      "V": 38.88,
+      "D": 61.38,
+      "A": 16.38,
+      "R": -6.12,
+      "L": -6.12,
+      "P": 50.13,
+      "B": 5.13,
+      "Z": 27.63,
+      "S": -17.37,
+      "0": 0
+    },
+    "Alice_QWP_State_Reference": {
+      "H": 0.46,
+      "V": 0.46,
+      "D": 0.46,
+      "A": 0.46,
+      "R": 135.46,
+      "L": 45.46,
+      "B": 0.46,
+      "P": 0.46,
+      "Z": 0.46,
+      "S": 0.46,
+      "0": 0
+    },
+    "Bob_QWP_State_Reference": {
+      "H": 97.08,
+      "V": 97.08,
+      "D": 97.08,
+      "A": 97.08,
+      "R": 232.08,
+      "L": 142.08,
+      "B": 97.08,
+      "P": 97.08,
+      "Z": 97.08,
+      "S": 97.08,
+      "0": 0
+    },
+    "Calibrated_PHI_PLUS": {
+      "C_UVHWP": 0.19174759848,
+      "C_QP": -0.081755227,
+      "C_PCC": -0.953211158,
+      "B_C_HWP": 0.6300
+    },
+    "Calibrated_HH": {
+      "C_UVHWP": 0.5771191,
+      "C_QP": 0,
+      "C_PCC": -0.953211158,
+      "B_C_HWP": 0.6300
+    }
+  }
+}
