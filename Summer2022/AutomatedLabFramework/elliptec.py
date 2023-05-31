@@ -1,5 +1,6 @@
 # imports 
 
+from re import S
 from time import sleep
 import numpy as np
 import serial
@@ -94,7 +95,7 @@ class ElliptecMotor(Motor):
         super().__init__(name, 'Elliptec')
 
         # set attributes
-        self.com_port = self._get_com_port(com_port) # gets serial object
+        self.com_port = self._get_com_port(com_port) # sets self.com_port to serial port
         self.address = address
         self.ppmu = self._get_ppmu() # pulse per measurement unit
 
@@ -130,28 +131,29 @@ class ElliptecMotor(Motor):
         # otherwise open COM port
         else:
             try:
-                ser = serial.Serial(com_port, timeout=2)
+                s = serial.Serial(com_port, timeout=2)
+                COM_PORTS[com_port] = s
+                return s
             except:
                 raise RuntimeError(f'Failed to connect to serial port {com_port} for motor {self.__repr__()}.')
-            COM_PORTS[com_port] = ser
-            return ser
 
-    def _send_instruction(self, inst:bytes, data:bytes) -> None:
+    def _send_instruction(self, inst:bytes, data:bytes=b'') -> None:
         ''' Sends an instruction to the motor. '''
         # send instruction
+        print(f'sending ({self.address + inst + data}) to ({self.name})')
         self.com_port.write(self.address + inst + data)
     
-    def _get_response(self, inst:bytes, data:bytes=b'', require_len:int=None, require_resp_code:bytes=None) -> bytes:
+    def _get_response(self, inst:bytes, resp_len:int, data:bytes=b'', require_resp_code:bytes=None) -> bytes:
         ''' Get a response from the motor.
 
         Parameters
         ----------
         inst : bytes
             The instruction to send, should be 2 bytes long.
+        resp_len : int
+            The length of the response to require. If None, no length check is performed.
         data : bytes, optional
             The data to send, if applicable.
-        require_len : int, optional
-            The length of the response to require. If None, no length check is performed.
         require_resp_code : bytes, optional
             The response code to require. If None, no response code check is performed.
 
@@ -160,44 +162,44 @@ class ElliptecMotor(Motor):
         bytes
             The response from the motor.
         '''
+        # clear queue if there is one
+        resp = self.com_port.readall()
         # send the instruction and get the response
         self._send_instruction(inst, data)
-        resp = self.com_port.readall().split(b'\r\n')[-1]
-        
+        print(f'waiting on response from {self.name}')
+        resp = self.com_port.read(resp_len) # wait forever for anything
+        print(f'\tgot response {resp}')
+
         # check that it is for us
-        if resp[0] != self.address:
+        if resp[0] != self.address[0]:
             raise ValueError(f"Got response {resp} that is not for this motor ({self.__repr__()}).")
-        
-        # check the length
-        if require_len is not None:
-            assert len(resp) == require_len, f'Response {resp} to instruction {self.address + inst + data} should be {require_len} bytes long.'
 
         # check response code
         if require_resp_code is not None:
-            assert resp[1:3] == require_resp_code, f'Response {resp} to instruction {self.address + inst + data} should start with {require_resp_code}.'
+            assert (resp[1:3] == require_resp_code.upper()), f'Response {resp} to instruction {self.address + inst + data} should start with {require_resp_code}.'
         
         # return the response
         return resp
 
     def _get_ppmu(self) -> int:
         ''' Contact the motor and get the pulse per measurement unit. '''
-        # send instruction asking for info
-        self.com_port.write(self.address + b'in')
-        # get the last response
-        resp = self.com_port.readall().split(b'\r\n')[-1]
+        return (143360/360)
+        # get the info
+        resp = self._get_response(b'in', resp_len=32, require_resp_code=b'in')
         # pulse/m.u. is bytes 25-32
-        return int.from_bytes(resp[25:32], 'big')
+        return int.from_bytes(resp[25:33], 'big')
 
     def _radians_to_bytes(self, angle_radians:float, num_bytes:int=8) -> bytes:
         ''' Converts an angle in radians to a hexidecimal byte string. '''
         # convert to degrees
         deg = np.rad2deg(angle_radians)
+        # 
         # convert to pulses
         pulses = deg * self.ppmu
         # convert to hex
         hexPulses = hex(int(pulses))[2:].upper()
         # pad with zeros
-        hexPulses = hexPulses.zfill(num_bytes*2)
+        hexPulses = hexPulses.zfill(num_bytes)
         # convert to bytes
         return hexPulses.encode('utf-8')
 
@@ -215,12 +217,23 @@ class ElliptecMotor(Motor):
     def get_status(self) -> str:
         ''' Retrieve the status of the motor. '''
         # get and check response
-        resp = self._get_response(b'gs', require_len=5, require_resp_code=b'gs')
+        resp = self._get_response(b'gs', resp_len=5, require_resp_code=b'gs')
         # return the status
         if resp[3:5] in self.ELLIPTEC_STATUS_CODES:
             return self.ELLIPTEC_STATUS_CODES[resp[3:5]]
         else:
             return 'UNKNOWN STATUS CODE'
+    
+    def home(self) -> None:
+        self._send_instruction(b'ho0')
+
+    def rotate_absolute(self, angle_radians:float, blocking:bool=True):
+        self._send_instruction(b'ma', self._radians_to_bytes(angle_radians, num_bytes=8))
+        sleep(3) # TODO: implement blocking
+
+    def rotate_relative(self, angle_radians:float, blocking:bool=True):
+        self._send_instruction(b'mr', self._radians_to_bytes(angle_radians, num_bytes=8))
+        sleep(3) # TODO: implement blocking
 
 class ThorLabsMotor(Motor):
     ''' ThorLabs Motor class.
@@ -305,6 +318,9 @@ class ThorLabsMotor(Motor):
         return np.deg2rad(self._motor_apt.position())
 
 UVHWP = ElliptecMotor('UVHWP', 'COM5', b'A')
+
+# BPO0001F738
+
 QP = ElliptecMotor('QP', 'COM5', b'B')
 PCC = ElliptecMotor('PCC', 'COM5', b'C')
 B_CHWP = ElliptecMotor('B_CHWP', 'COM7', b'A')
