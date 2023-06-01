@@ -28,13 +28,12 @@ class Motor:
     AttributeError
         If the name is not unique.
     '''
-    def __init__(self, name:str, type:str):
+    def __init__(self, type:str):
         # check name is unique
-        if name in MOTORS:
-            raise AttributeError(f"Motor with name \"{name}\" already exists.")
+        if __name__ in MOTORS:
+            raise AttributeError(f"Motor with name \"{__name__}\" already exists.")
 
         # set attributes
-        self.name = name
         self.type = type
 
         # add self to MOTORS dict
@@ -72,6 +71,10 @@ class Motor:
 
     def home(self, blocking=True):
         ''' Bring the motor to its home position. '''
+        raise NotImplementedError
+
+    def is_active(self) -> bool:
+        ''' Check if the motor is active. '''
         raise NotImplementedError
 
     def get_position(self) -> float:
@@ -250,11 +253,12 @@ class ElliptecMotor(Motor):
         # get the position exactly
         pos_resp = self._send_instruction(b'gp', resp_len=11, require_resp_code=b'po')
         pos = int(pos_resp[3:11], 16)
-        # get the new offset
-        new_offset = hex(current_offset + pos)[2:].upper().encode('utf-8')
+        # get the new offset as 8 byte-encoded hex string
+        new_offset = hex(current_offset + pos)[2:].upper().encode('utf-8').zfill(8)
         # send the new offset
         self._send_instruction(b'so', data=new_offset)
         # check the new position
+        return self.get_position()
 
     def _return_resp(self, resp:bytes) -> 'Union[float,None]':
         ''' Returns a response from the motor. Also checks if that response contains an error code, and alerts the user.
