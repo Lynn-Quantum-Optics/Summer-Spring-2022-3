@@ -111,10 +111,10 @@ class ElliptecMotor(Motor):
         b'07': 'initializing error',
         b'08': 'thermal error',
         b'09': 'busy',
-        b'10': 'sensor error',
-        b'11': 'motor error',
-        b'12': 'out of range error',
-        b'13': 'over current error'}
+        b'0A': 'sensor error',
+        b'0B': 'motor error',
+        b'0C': 'out of range error',
+        b'0D': 'over current error'}
 
     # built in methods
 
@@ -177,10 +177,10 @@ class ElliptecMotor(Motor):
         ''' Requests basic info from the motor. '''
         # return (143360/360)
         # get the info
-        resp = self._send_instruction(b'in', resp_len=32, require_resp_code=b'in')
+        resp = self._send_instruction(b'in', resp_len=33, require_resp_code=b'in')
         # parse the info
         self.info = dict(
-            ELL = int(resp[3:6]),
+            ELL = str(resp[3:6]),
             SN = int(resp[5:13]),
             YEAR = int(resp[13:17]),
             FWREL = int(resp[17:19]),
@@ -188,7 +188,7 @@ class ElliptecMotor(Motor):
         )
         # get travel and ppmu
         self.travel = int(resp[21:25], 16)
-        self.ppmu = int(resp[25:33], 16)
+        self.ppmu = int(resp[25:33], 16)/self.travel
         return None
 
     def _radians_to_bytes(self, angle_radians:float, num_bytes:int=8) -> bytes:
@@ -204,12 +204,13 @@ class ElliptecMotor(Motor):
         Returns
         -------
         '''
-        # convert to 0 to 2pi
-        angle_radians = angle_radians % (2*np.pi)
         # convert to degrees
         deg = np.rad2deg(angle_radians)
-        # convert to pulses, modulo to 
-        pulses = int(deg * self.ppmu) % 360
+        # convert to pulses
+        pulses = int(abs(deg) * self.ppmu)
+        # if negative, take two's compliment
+        if deg < 0:
+            pulses = (pulses ^ 0xffffffff) + 1
         # convert to hex
         hexPulses = hex(int(pulses))[2:].upper()
         # pad with zeros
@@ -255,20 +256,56 @@ class ElliptecMotor(Motor):
         self._send_instruction(b'so', data=new_offset)
         # check the new position
 
+    def _return_resp(self, resp:bytes) -> 'Union[float,None]':
+        ''' Returns a response from the motor. Also checks if that response contains an error code, and alerts the user.
+        
+        Parameters
+        ----------
+        resp : bytes
+            The response to return to the user.
+
+        Returns
+        -------
+        float
+            If the response was a position.
+        0
+            If the response was a nominal status.
+        None
+            If the response was a status.
+        '''
+        if resp[1:3] == b'GS': # status code
+            # parse status
+            s = self.get_status(resp)
+            # return 0 if ok
+            if s == 'ok': 
+                return 0
+            # otherwise, warn the user
+            print(f'WARNING: {self.name} raised status ({self.get_status(resp)})')
+        elif resp[1:3] == b'PO':
+            # return position
+            return self.get_position(resp)
+        else:
+            # print a warning
+            print(f'WARNING: unexpected response from {self.name} ({resp})')
+            return None
+
     # public methods
 
-    def get_status(self) -> str:
+    def get_status(self, resp:bytes=None) -> str:
         ''' Retrieve the status of the motor. '''
-        # get and check response
-        resp = self._send_instruction(b'gs', resp_len=5, require_resp_code=b'gs')
+        if resp is None:
+            # get resp
+            resp = self._send_instruction(b'gs', resp_len=5, require_resp_code=b'gs')
         # return the status
         if resp[3:5] in self.ELLIPTEC_STATUS_CODES:
             return self.ELLIPTEC_STATUS_CODES[resp[3:5]]
         else:
-            return 'UNKNOWN STATUS CODE'
+            return f'UNKNOWN STATUS CODE {resp[3:5]}'
     
     def home(self) -> None:
-        self._send_instruction(b'ho0')
+        ''' Send motor to home (0 absolute position). '''
+        resp = self._send_instruction(b'ho0', resp_len=11, require_resp_code=b'po')
+        return self._return_resp(resp)
 
     def rotate_absolute(self, angle_radians:float, blocking:bool=True) -> float:
         ''' Rotate the motor to an absolute position relative to home.
@@ -291,6 +328,8 @@ class ElliptecMotor(Motor):
         if blocking:
             while self.is_active():
                 sleep(0.1)
+        # check response
+        return self._return_resp(resp)
 
     def rotate_relative(self, angle_radians:float, blocking:bool=True) -> float:
         ''' Rotate the motor to a position relative to the current one.
@@ -308,19 +347,25 @@ class ElliptecMotor(Motor):
             The ABSOLUTE angle in radians that the motor was moved to. Likely will not be the same as the angle requested.
         '''
         # request the move
-        self._send_instruction(b'mr', self._radians_to_bytes(angle_radians, num_bytes=8))
+        resp = self._send_instruction(b'mr', self._radians_to_bytes(angle_radians, num_bytes=8))
         # block
         if blocking:
             while self.is_active():
                 sleep(0.1)
+        return self._return_resp(resp)
 
     def is_active(self) -> bool:
         ''' Check if the motor is active by querying the status. '''
         resp = self._send_instruction(b'i1', resp_len=24, require_resp_code=b'i1')
-        return int(resp[4])
+        return resp[4] != 48 # zero in ASCII
 
-    def get_position(self) -> float:
+    def get_position(self, resp:bytes=None) -> float:
         ''' Get the current position of the motor in radians.
+        
+        Parameters
+        ----------
+        resp, optional
+            The response from the device to parse. If none, device will be queried.
         
         Returns
         -------
@@ -328,9 +373,16 @@ class ElliptecMotor(Motor):
             The absolute position of the motor, in radians.
         '''
         # get the position
-        resp = self._send_instruction(b'gp', resp_len=11, require_resp_code=b'po')
+        if resp is None:
+            resp = self._send_instruction(b'gp', resp_len=11, require_resp_code=b'po')
+        pos = resp[3:11]
+        # check if negative and take the two's compliment
+        pos = int(pos, 16)
+        if (pos >> 31) & 1:
+            # negative number, take the two's compliment
+            pos = -((pos ^ 0xffffffff) + 1)
         # convert to radians
-        return self._bytes_to_radians(resp[3:11])
+        return np.deg2rad(pos / self.ppmu)
 
 class ThorLabsMotor(Motor):
     ''' ThorLabs Motor class.
@@ -348,12 +400,22 @@ class ThorLabsMotor(Motor):
 
         # set attributes
         self.serial_num = serial_num
-        self._motor_apt = apt.Motor(serial_num)
+        self.motor_apt = apt.Motor(serial_num)
     
     def __repr__(self) -> str:
         return f'ThorLabsMotor-{self.name}'
 
-    def rotate_relative(self, angle_radians:float, blocking:bool=True) -> None:
+    # public methods
+
+    def get_status(self) -> int:
+        ''' Returns 0 if nominal, anything else otherwise. '''
+        return self.motor_apt.motion_error
+
+    def is_active(self) -> bool:
+        ''' Returns true if the motor is actively moving, false otherwise. '''
+        return self.motor_apt.is_in_motion
+
+    def rotate_relative(self, angle_radians:float, blocking:bool=True) -> float:
         ''' Rotates the motor by a relative angle.
 
         Parameters
@@ -365,13 +427,15 @@ class ThorLabsMotor(Motor):
         '''
         # convert to degrees and send instruction
         angle = np.rad2deg(angle_radians)
-        self._motor_apt.move_relative(angle)
+        self.motor_apt.move_relative(angle)
         # (maybe) wait for move to finish
         if blocking:
-            while self._motor_apt.is_in_motion():
+            while self.is_active():
                 sleep(0.1)
+        # return the position reached
+        return self.get_position()
 
-    def rotate_absolute(self, angle_radians:float, blocking:bool=True) -> None:
+    def rotate_absolute(self, angle_radians:float, blocking:bool=True) -> float:
         ''' Rotates the motor to an absolute angle.
 
         Parameters
@@ -383,13 +447,15 @@ class ThorLabsMotor(Motor):
         '''
         # convert to degrees and send instruction
         angle = np.rad2deg(angle_radians)
-        self._motor_apt.move_to(angle)
+        self.motor_apt.move_to(angle)
         # (maybe) wait for move to finish
         if blocking:
-            while self._motor_apt.is_in_motion():
+            while self.is_active():
                 sleep(0.1)
+        # return the current position
+        return self.get_position()
 
-    def home(self, blocking:bool=True) -> None:
+    def home(self, blocking:bool=True) -> float:
         ''' Bring the motor to its home position. 
         
         Parameters
@@ -397,12 +463,9 @@ class ThorLabsMotor(Motor):
         blocking : bool, optional
             Whether to block until the motor has finished rotating. Default is True.
         '''
-        # convert to degrees and send instruction
-        self._motor_apt.move_home()
-        # (maybe) wait for move to finish
-        if blocking:
-            while self._motor_apt.is_in_motion():
-                sleep(0.1)
+        # self.motor_apt.move_home() # this sent the motor spinning forever
+        # instead, just go to zero
+        return self.rotate_absolute(0)
 
     def get_position(self) -> float:
         ''' Get the position of the motor.
@@ -412,11 +475,14 @@ class ThorLabsMotor(Motor):
         float
             The position of the motor, in radians.
         '''
-        return np.deg2rad(self._motor_apt.position())
+        return np.deg2rad(self.motor_apt.position)
 
-UVHWP = ElliptecMotor('UVHWP', 'COM5', b'A')
-QP = ElliptecMotor('QP', 'COM5', b'B')
-PCC = ElliptecMotor('PCC', 'COM5', b'C')
-B_CHWP = ElliptecMotor('B_CHWP', 'COM7', b'A')
-
-
+    
+# UVHWP = ElliptecMotor('UVHWP', 'COM5', b'A')
+# QP = ElliptecMotor('QP', 'COM5', b'B')
+# PCC = ElliptecMotor('PCC', 'COM5', b'C')
+# B_C_HWP = ElliptecMotor('B_CHWP', 'COM7', b'A')
+# B_HWP = ThorLabsMotor('BHWP', 83811901)
+# B_QWP = ThorLabsMotor('BQWP', 83811646)
+# A_HWP = ThorLabsMotor('AHWP', 83811667)
+# A_QWP = ThorLabsMotor('AQWP', 83811904)
