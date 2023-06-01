@@ -6,82 +6,10 @@ import numpy as np
 import serial
 import thorlabs_apt as apt
 
-# motor info dictionary
-
-MOTORS = dict()
+# com ports dictionary
 COM_PORTS = dict()
 
-class Motor:
-    ''' Base class for all motors.
-
-    Essentially just manages the MOTORS dict and supplies methods that will be implemented by each motor type.
-
-    Parameters
-    ----------
-    name : str
-        The unique name for the motor.
-    type : str
-        The type of motor.
-
-    Raises
-    ------
-    AttributeError
-        If the name is not unique.
-    '''
-    def __init__(self, type:str):
-        # check name is unique
-        if __name__ in MOTORS:
-            raise AttributeError(f"Motor with name \"{__name__}\" already exists.")
-
-        # set attributes
-        self.type = type
-
-        # add self to MOTORS dict
-        MOTORS[self.name] = self
-
-    def __repr__(self):
-        return f"Motor-{self.name}"
-    
-    def __str__(self):
-        return self.__repr__()
-
-    def rotate_relative(self, angle_radians:float, blocking:bool=True) -> None:
-        ''' Rotates the motor by a relative angle.
-
-        Parameters
-        ----------
-        angle_radians : float
-            The angle to rotate by, in radians.
-        blocking : bool, optional
-            Whether to block until the motor has finished rotating. Default is True.
-        '''
-        raise NotImplementedError
-
-    def rotate_absolute(self, angle_radians:float, blocking:bool=True):
-        ''' Rotates the motor to an absolute angle.
-
-        Parameters
-        ----------
-        angle_radians : float
-            The angle to rotate by, in radians.
-        blocking : bool, optional
-            Whether to block until the motor has finished rotating. Default is True.
-        '''
-        raise NotImplementedError
-
-    def home(self, blocking=True):
-        ''' Bring the motor to its home position. '''
-        raise NotImplementedError
-
-    def is_active(self) -> bool:
-        ''' Check if the motor is active. '''
-        raise NotImplementedError
-
-    def get_position(self) -> float:
-        ''' Get the position of the motor. '''
-        raise NotImplementedError
-
-class ElliptecMotor(Motor):
+class ElliptecMotor:
     ''' Elliptec Motor class.
     
     Parameters
@@ -93,9 +21,9 @@ class ElliptecMotor(Motor):
     address : bytes
         The address of the motor, a single byte.
     '''
-    def __init__(self, name:str, com_port:str, address:bytes):
-        # call superclass
-        super().__init__(name, 'Elliptec')
+    def __init__(self, com_port:str, address:bytes):
+        # set type
+        self.type = 'Elliptec'
 
         # set attributes
         self.com_port = self._get_com_port(com_port) # sets self.com_port to serial port
@@ -388,7 +316,7 @@ class ElliptecMotor(Motor):
         # convert to radians
         return np.deg2rad(pos / self.ppmu)
 
-class ThorLabsMotor(Motor):
+class ThorLabsMotor:
     ''' ThorLabs Motor class.
     
     Parameters
@@ -398,9 +326,9 @@ class ThorLabsMotor(Motor):
     serial_num : int
         The serial number of the motor.
     '''
-    def __init__(self, name:str, serial_num:int):
-        # call superclass
-        super().__init__(name, 'Elliptec')
+    def __init__(self, serial_num:int):
+        # set type
+        self.type = 'ThorLabs'
 
         # set attributes
         self.serial_num = serial_num

@@ -1,7 +1,6 @@
 import serial as ser
 import functools as ft
 import numpy as np
-import pandas as pd
 
 class FPGACCUController:
     ''' Main controller for the Altera DE2 FPGA CCU.
@@ -97,7 +96,7 @@ class FPGACCUController:
 
     # +++ PUBLIC METHODS +++
 
-    def collect_sample(self, period:float) -> pd.DataFrame:
+    def collect_sample(self, period:float) -> np.ndarray:
         ''' Collects a single sample of from the CCU over the specified period.
 
         Parameters
@@ -108,10 +107,12 @@ class FPGACCUController:
         Returns
         -------
         np.ndarray of size (8,)
-            Total coincidence count RATES from the CCU. Each element corresponds to a detector/coincidence ['A', 'B', 'A\'', 'B\'', 'C4', 'C5', 'C6', 'C7'] (in order).
+            Coincidence count RATES from the CCU. Each element corresponds to a detector/coincidence ['A', 'B', 'A\'', 'B\'', 'C4', 'C5', 'C6', 'C7'] (in order).
         '''
         # calculate number of samples to collect
         samples = max(int(period / self.UPDATE_PERIOD), 1)
+        # flush the buffer
+        self._flush()
         # read data and calculate rate
         data = self._read(samples)
         # accumulate data and convert to rate
