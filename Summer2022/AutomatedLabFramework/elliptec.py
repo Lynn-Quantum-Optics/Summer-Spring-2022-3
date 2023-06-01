@@ -415,9 +415,6 @@ class ThorLabsMotor(Motor):
         return np.deg2rad(self._motor_apt.position())
 
 UVHWP = ElliptecMotor('UVHWP', 'COM5', b'A')
-
-# BPO0001F738
-
 QP = ElliptecMotor('QP', 'COM5', b'B')
 PCC = ElliptecMotor('PCC', 'COM5', b'C')
 B_CHWP = ElliptecMotor('B_CHWP', 'COM7', b'A')
