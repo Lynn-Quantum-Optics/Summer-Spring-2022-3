@@ -96,8 +96,8 @@ class FPGACCUController:
 
     # +++ PUBLIC METHODS +++
 
-    def collect_sample(self, period:float) -> np.ndarray:
-        ''' Collects a single sample of from the CCU over the specified period.
+    def get_count_rates(self, period:float) -> np.ndarray:
+        ''' Acquires the coincidence count rates from the CCU over the specified period.
 
         Parameters
         ----------

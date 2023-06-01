@@ -66,7 +66,7 @@ class Manager:
         start_time = time.time()
 
         # run trials
-        data = np.row_stack([self._ccu.collect_sample(samp_period) for _ in range(num_samp)])
+        data = np.row_stack([self._ccu.get_count_rates(samp_period) for _ in range(num_samp)])
         
         # record stop time
         stop_time = time.time()
