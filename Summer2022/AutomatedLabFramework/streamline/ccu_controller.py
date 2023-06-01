@@ -2,7 +2,6 @@ import serial as ser
 import functools as ft
 import numpy as np
 import pandas as pd
-import scipy.stats as stats
 
 class FPGACCUController:
     ''' Main controller for the Altera DE2 FPGA CCU.
@@ -98,8 +97,8 @@ class FPGACCUController:
 
     # +++ PUBLIC METHODS +++
 
-    def collect_data(self, period:float) -> pd.DataFrame:
-        ''' Collects data from the CCU for a given period of time.
+    def collect_sample(self, period:float) -> pd.DataFrame:
+        ''' Collects a single sample of from the CCU over the specified period.
 
         Parameters
         ----------
@@ -108,37 +107,14 @@ class FPGACCUController:
         
         Returns
         -------
-        pd.DataFrame
-            Data collected from the CCU.
+        np.ndarray of size (8,)
+            Total coincidence count RATES from the CCU. Each element corresponds to a detector/coincidence ['A', 'B', 'A\'', 'B\'', 'C4', 'C5', 'C6', 'C7'] (in order).
         '''
         # calculate number of samples to collect
         samples = max(int(period / self.UPDATE_PERIOD), 1)
-        # read data
+        # read data and calculate rate
         data = self._read(samples)
-        # accumulate data
-
-        totals = np.sum(data, axis=0)
-        totals_unc = np.sqrt(totals)
-        
-        rates = np.mean(data, axis=0) / self.UPDATE_PERIOD
-        rates_unc = stats.sem(data, axis=0) / self.UPDATE_PERIOD
-
-        # get columns for data
-        columns = \
-            [f'{k}' for k in self.CHANNEL_KEYS] + \
-            [f'{k} UNC' for k in self.CHANNEL_KEYS] + \
-            [f'{k} rate' for k in self.CHANNEL_KEYS] + \
-            [f'{k} UNC' for k in self.CHANNEL_KEYS]
-        
-        # create and return dataframe
-        return pd.DataFrame(
-            data=np.append(totals, totals_unc, rates, rates_unc),
-            columns=columns)
-
-
-        
-
-
-        
+        # accumulate data and convert to rate
+        return np.sum(data, axis=0) / period
 
 # cont = FPGACCUController('COM4', 19200)
