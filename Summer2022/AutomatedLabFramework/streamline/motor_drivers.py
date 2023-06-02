@@ -1,6 +1,12 @@
-# imports 
+''' motor_drivers.py
+This file contains the classes for controlling the various motors in the lab. We have two types of motors: ThorLabs and Elliptec. There is a unique class for each type of motor.
 
-from re import S
+authors:
+Alec Roberson (aroberson@hmc.edu)
+Ben Hartley (bhartley@hmc.edu)
+'''
+
+# imports 
 from time import sleep
 import numpy as np
 import serial

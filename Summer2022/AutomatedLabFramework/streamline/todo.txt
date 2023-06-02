@@ -1,0 +1,4 @@
+[ ] implement a system to check if a motor even moved, so that we don't have to ping each motor for each measurement (which can take >20s)
+[ ] gracefully close down the COM_PORTS when exiting
+[ ] make some live plots of the data appear when running
+[ ] finish documentation on basic usage

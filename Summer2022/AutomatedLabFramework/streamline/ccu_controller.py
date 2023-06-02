@@ -1,3 +1,12 @@
+''' ccu_controller.py
+This file contains the FPGACCUController class, which is used to interface with the CCU for the experiment. It's most sophisticated method collects count rates for the detectors over some specified time period (with no uncertainties).
+
+FPGA CCU Documentation: http://people.whitman.edu/~beckmk/QM/circuit/circuit.html
+
+authors:
+Alec Roberson (aroberson@hmc.edu)
+Kye W. Shi (kwshi@hmc.edu)
+'''
 import serial as ser
 import functools as ft
 import numpy as np
